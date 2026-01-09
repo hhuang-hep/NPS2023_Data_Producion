@@ -3,9 +3,6 @@
 
 Int_t ndecay = 5000; // number of decays for pi0 contamination simulation
 
-// Check if the block is in the range for calibration (with sim. numbering scheme)
-bool passAccCut(const vector<int> &maskBlkList, const double &NPS_dist, int sim_blk_number);
-
 void prodTree(int run_number, int iseg)
 {   
     TH1::SetDefaultSumw2();
@@ -574,7 +571,6 @@ void prodTree(int run_number, int iseg)
                 // pi0 subtraction__________________________________________________________________
                 if(it == 0){
                     // acceptance cut for photons
-                    // NEED to be modified when considering the dead blocks!!!!!!!!!!!!!!!
                     Int_t nCol_inMgnt = 0; // number of columns under the shadow of magnet
                     if(290 < NPS_dist && NPS_dist < 310) nCol_inMgnt = 5; // col0-4 when NPS@300cm
                     else if(340 < NPS_dist && NPS_dist < 360) nCol_inMgnt = 4; // col0-3 when NPS@350cm
@@ -710,48 +706,4 @@ void prodTree(int run_number, int iseg)
     h_nclust->Write();
     
     outfile->Close();
-}
-
-bool passAccCut(const vector<int> &maskBlkList, const double &NPS_dist, int sim_blk_number)
-{   
-    bool pass = true; // assume all pass for initialization
-
-    // Column and row numbers for the cut on seed blocks
-    // these col and row numbers are in sim. numbering scheme
-    Int_t sim_irow = sim_blk_number%nrow;
-    Int_t sim_icol = (sim_blk_number-sim_irow)/nrow;
-
-    // shell not pass if at the edge columns/rows====================
-    if(!(0 < sim_irow && sim_irow < 35 && 0 < sim_icol && sim_icol < 29)){
-        pass = false; 
-        return pass;
-    }
-
-    // shell not pass if next to a bad/off block=============================
-    Int_t nps_blk_number = bnConv_OldToNew(sim_blk_number); // Convert block number, column, row to NPS number scheme
-    Int_t icol = nps_blk_number%30;
-    Int_t irow = (nps_blk_number-icol)/30;
-    // Check if next to masked block
-    for(int i = 0; i < maskBlkList.size(); i++){
-        Int_t icol_maskBlk = maskBlkList[i]%30;
-        Int_t irow_maskBlk = (maskBlkList[i]-icol)/30;
-        if(icol == icol_maskBlk-1 || icol == icol_maskBlk+1 
-        || irow == irow_maskBlk-1 || irow == irow_maskBlk+1){
-            pass = false; // shell not pass if next to a masked block
-            return pass;
-        }
-    }
-
-    // shell not pass if under the shadow of magnet (for better statistics)===========
-    Int_t nCol_inMgnt = 0; // number of columns under the shadow of magnet
-    if(290 < NPS_dist && NPS_dist < 310) nCol_inMgnt = 5; // col0-4 when NPS@300cm
-    else if(340 < NPS_dist && NPS_dist < 360) nCol_inMgnt = 4; // col0-3 when NPS@350cm
-    else if(390 < NPS_dist && NPS_dist < 410) nCol_inMgnt = 2; // col0-1 when NPS@400cm
-    else nCol_inMgnt = 0; // no blocked when NPS is far from target
-    if(!(abs(sim_icol-29) >= nCol_inMgnt)){
-        pass = false; // shell not pass if at the edge columns/rows
-        return pass;
-    }
-
-    return pass;
 }
