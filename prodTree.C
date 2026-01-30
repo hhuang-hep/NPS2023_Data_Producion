@@ -9,50 +9,7 @@ void prodTree(int run_number, int iseg)
 
     // Kinematics dependent variables that are not in DB________________________________________
     Double_t clusTrsH = 0.2; // GeV
-    Double_t pi0_sigm = 0; // GeV, for pi0 mass window cut of pi0 contamination subtraction
-    // temp for x36_5_3
-    if(run_number == 3728) pi0_sigm = 0.004602; 
-    else if(run_number == 3729) pi0_sigm = 0.004319; 
-    else if(run_number == 3731) pi0_sigm = 0.004398; 
-    else if(run_number == 3732) pi0_sigm = 0.004114; 
-    else if(run_number == 3733) pi0_sigm = 0.003763; 
-    else if(run_number == 3737) pi0_sigm = 0.004604; 
-    else if(run_number == 3755) pi0_sigm = 0.004519; 
-    else if(run_number == 3756) pi0_sigm = 0.004575; 
-    else if(run_number == 3757) pi0_sigm = 0.004489; 
-    else if(run_number == 3758) pi0_sigm = 0.004530; 
-    else if(run_number == 3759) pi0_sigm = 0.004721; 
-    else if(run_number == 3760) pi0_sigm = 0.004238; 
-    else if(run_number == 3762) pi0_sigm = 0.004052; 
-    else if(run_number == 3767) pi0_sigm = 0.004417;
-    //end temp
-    if(pi0_sigm == 0){
-        cout<<"ERROR: pi0 width not set for run "<<run_number<<"!!!"<<endl;
-        return;
-    }
-
-    // Timing offsets from Mark
-    // ifstream fTimingOffset("/group/nps/mathison/analysis/NPS_Offsets/wfOffsets_3020.txt"); // x36_2
-    // ifstream fTimingOffset("/group/nps/mathison/analysis/NPS_Offsets/wfOffsets_4253.txt"); // x60_4b
-    // ifstream fTimingOffset("/group/nps/mathison/analysis/NPS_Offsets/wfOffsets_60_4b.txt"); // x60_4b fixed
-    ifstream fTimingOffset("/group/nps/mathison/analysis/NPS_Offsets/wfOffsets_3728.txt"); // x36_5_3
-    if(!fTimingOffset){
-        cout<<"ERROR: Can't find the timing offsets file!!!"<<endl;
-        return;
-    }
-    Double_t timingOffset[1080];
-    for(int iblk = 0; iblk < 1080; iblk++) fTimingOffset >> timingOffset[iblk];
-
-    // Pi0 calibration coefficients
-    ifstream fpi0coef;
-    // fpi0coef.open("/group/nps/hhuang/analysis/DVCS_NPS2023/DVCS_analysis/pi0Calib_wf/Result/x60_4b_LH2_wf_v2_cycle0_cycle1/coef_pi0Calib_4253.txt"); // x60_4b wavefor fit
-    fpi0coef.open(Form("/group/nps/hhuang/analysis/DVCS_NPS2023/DVCS_analysis/pi0Calib_wf/Result/x36_5_3_LH2_wf_cycle0_cycle1/coef_pi0Calib_%d.txt", run_number)); // x36_5_3 waveform fit
-    if(!fpi0coef){
-        cout<<"ERROR: Can't find the calibration coefficient file!!!"<<endl;
-        return;
-    }
-    Double_t coefPi0[1080]; //pi0 calibration coefficients (GeV/mV) in NPS numbering Scheme
-    for(int iblk = 0; iblk < 1080; iblk++) fpi0coef >> coefPi0[iblk];
+    Double_t pi0_sigm = 0.0046; // GeV, for pi0 mass window cut of pi0 contamination subtraction
     
     // Input rootfiles__________________________________________________________
     // TString dataDir = "/cache/hallc/c-nps/analysis/pass2/WF";
@@ -66,7 +23,7 @@ void prodTree(int run_number, int iseg)
     }
 
     // Output rootfiles__________________________________________________________
-    // TString outputDir = "/volatile/hallc/nps/hhuang/farmFile/Production/DVCS";
+    // TString outputDir = "/volatile/hallc/nps/hhuang/farmFile/Production/DVCS/x36_5_3_combined_tree";
     TString outputDir = ".";
     TString outfilename = Form("nps_production_%d_%d_wf_calib.root", run_number, iseg);
 
@@ -99,13 +56,21 @@ void prodTree(int run_number, int iseg)
     Double_t H_hod_beta;
     Double_t H_cal_etottracknorm;
     Double_t H_cer_npeSum;
-
-    // Int_t Ndata_NPS_cal_fly_adcCounter;
-    // Double_t NPS_cal_fly_adcCounter[1080];
-    // Double_t NPS_cal_fly_adcSampPulseAmp[1080];
-    // Double_t NPS_cal_fly_adcSampPulseInt[1080];
-    // Double_t NPS_cal_fly_adcSampPulseTime[1080];
-    // Double_t NPS_cal_fly_adcSampPed[1080];
+    // added
+    Double_t H_react_ok;
+    Double_t H_gtr_ok;
+    Double_t H_cal_etracknorm;
+    Double_t H_cal_etotnorm;
+    Double_t T_hms_hEDTM_tdcTimeRaw;
+    Double_t H_1MHz_scaler;
+    Double_t H_BCM4A_scaler;
+    Double_t H_BCM4A_scalerCharge;
+    Double_t H_BCM4A_scalerCurrent;
+    Double_t H_BCM4A_scalerChargeCut;
+    Double_t H_BCM4A_Hel_scalerCharge;
+    Double_t H_BCM4A_Hel_scalerCurrent;
+    Double_t H_BCM4A_Hel_scaler;
+    Double_t T_helicity_hel;
 
     // Disabla all and turn on the branches we need
     t_T->SetBranchStatus("*", false);
@@ -123,14 +88,21 @@ void prodTree(int run_number, int iseg)
     t_T->SetBranchStatus("H.hod.beta", true);
     t_T->SetBranchStatus("H.cal.etottracknorm", true);
     t_T->SetBranchStatus("H.cer.npeSum", true);
-
-    // NPS fADC information
-    // t_T->SetBranchStatus("Ndata.NPS.cal.fly.adcCounter", true);
-    // t_T->SetBranchStatus("NPS.cal.fly.adcCounter", true);
-    // t_T->SetBranchStatus("NPS.cal.fly.adcSampPulseAmp", true);
-    // t_T->SetBranchStatus("NPS.cal.fly.adcSampPulseInt", true);
-    // t_T->SetBranchStatus("NPS.cal.fly.adcSampPulseTime", true);
-    // t_T->SetBranchStatus("NPS.cal.fly.adcSampPed", true);
+    //added
+    t_T->SetBranchStatus("H.react.ok", true);
+    t_T->SetBranchStatus("H.gtr.ok", true);
+    t_T->SetBranchStatus("H.cal.etracknorm", true);
+    t_T->SetBranchStatus("H.cal.etotnorm", true);
+    t_T->SetBranchStatus("T.hms.hEDTM_tdcTimeRaw", true);
+    t_T->SetBranchStatus("H.1MHz.scaler", true);
+    t_T->SetBranchStatus("H.BCM4A.scaler", true);
+    t_T->SetBranchStatus("H.BCM4A.scalerCharge", true);
+    t_T->SetBranchStatus("H.BCM4A.scalerCurrent", true);
+    t_T->SetBranchStatus("H.BCM4A.scalerChargeCut", true);
+    t_T->SetBranchStatus("H.BCM4A_Hel.scalerCharge", true);
+    t_T->SetBranchStatus("H.BCM4A_Hel.scalerCurrent", true);
+    t_T->SetBranchStatus("H.BCM4A_Hel.scaler", true);
+    t_T->SetBranchStatus("T.helicity.hel", true);
 
     //Event Level variables
     t_T->SetBranchAddress("g.runnum", &runNb_T);
@@ -148,14 +120,21 @@ void prodTree(int run_number, int iseg)
     t_T->SetBranchAddress("H.hod.beta", &H_hod_beta);
     t_T->SetBranchAddress("H.cal.etottracknorm", &H_cal_etottracknorm);
     t_T->SetBranchAddress("H.cer.npeSum", &H_cer_npeSum);
-
-    // NPS fADC information
-    // t_T->SetBranchAddress("Ndata.NPS.cal.fly.adcCounter", &Ndata_NPS_cal_fly_adcCounter);
-    // t_T->SetBranchAddress("NPS.cal.fly.adcCounter", &NPS_cal_fly_adcCounter);
-    // t_T->SetBranchAddress("NPS.cal.fly.adcSampPulseAmp", &NPS_cal_fly_adcSampPulseAmp);
-    // t_T->SetBranchAddress("NPS.cal.fly.adcSampPulseInt", &NPS_cal_fly_adcSampPulseInt);
-    // t_T->SetBranchAddress("NPS.cal.fly.adcSampPulseTime", &NPS_cal_fly_adcSampPulseTime);
-    // t_T->SetBranchAddress("NPS.cal.fly.adcSampPed", &NPS_cal_fly_adcSampPed);
+    //added
+    t_T->SetBranchAddress("H.react.ok", &H_react_ok);
+    t_T->SetBranchAddress("H.gtr.ok", &H_gtr_ok);
+    t_T->SetBranchAddress("H.cal.etracknorm", &H_cal_etracknorm);
+    t_T->SetBranchAddress("H.cal.etotnorm", &H_cal_etotnorm);
+    t_T->SetBranchAddress("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
+    t_T->SetBranchAddress("H.1MHz.scaler", &H_1MHz_scaler);
+    t_T->SetBranchAddress("H.BCM4A.scaler", &H_BCM4A_scaler);
+    t_T->SetBranchAddress("H.BCM4A.scalerCharge", &H_BCM4A_scalerCharge);
+    t_T->SetBranchAddress("H.BCM4A.scalerCurrent", &H_BCM4A_scalerCurrent);
+    t_T->SetBranchAddress("H.BCM4A.scalerChargeCut", &H_BCM4A_scalerChargeCut);
+    t_T->SetBranchAddress("H.BCM4A_Hel.scalerCharge", &H_BCM4A_Hel_scalerCharge);
+    t_T->SetBranchAddress("H.BCM4A_Hel.scalerCurrent", &H_BCM4A_Hel_scalerCurrent);
+    t_T->SetBranchAddress("H.BCM4A_Hel.scaler", &H_BCM4A_Hel_scaler);
+    t_T->SetBranchAddress("T.helicity.hel", &T_helicity_hel);
 
     // TChain of waveform tree___________________________________________________________
     TTree *t_wf = (TTree*)infile->Get("WF");
@@ -208,14 +187,22 @@ void prodTree(int run_number, int iseg)
     // The angle and distance of calorimeter
     Double_t NPS_dist = *db->GetEntry_d("CALO_geom_Dist", run_number); // NPS distence in cm
     Double_t NPS_angle = *db->GetEntry_d("CALO_geom_Yaw", run_number); // NPS angle in rad
-    Int_t *caloMaskBlock = new Int_t[1080]; // Get the mask block information in NPS numbering Scheme
+
+    // Timing offsets after waveform fit from Mark, in NPS numbering Scheme
+    Double_t *timingOffset = new Double_t[1080];
+    timingOffset = db->GetEntry_d("CALO_calib_TimeOffset", run_number);
+
+    //pi0 calibration coefficients (GeV/mV) in NPS numbering Scheme
+    Double_t *coefPi0 = new Double_t[1080];
+    coefPi0 = db->GetEntry_d("CALO_calib_Pi0Coef", run_number);
+
+    // Mask block information in NPS numbering Scheme
+    Int_t *caloMaskBlock = new Int_t[1080]; 
     caloMaskBlock = db->GetEntry_i("CALO_flag_MaskBlock", run_number);
 
-    // Elastic coefficients
-    // Double_t *coefElas = new Double_t[1080]; // Get the elastic coefficients (GeV/mV) in NPS numbering Scheme
-    // coefElas = db->GetEntry_d("CALO_calib_ElasCoef", run_number);
+    delete db;
 
-    cout<<"Start clustering for Run "<<run_number<<", segment "<<iseg<<" with cluster threshold "<<clusTrsH<<" GeV"<<endl;
+    cout<<"Start clustering for Run "<<run_number<<", segment "<<iseg<<endl;
     cout<<"========== Run information =========="<<endl;
     cout<<"Beam energy: "<<Beam_energy<<" GeV"<<endl;
     cout<<"HMS momentum: "<<HMS_mom<<" GeV/c"<<endl;
@@ -224,6 +211,8 @@ void prodTree(int run_number, int iseg)
     cout<<"NPS distance: "<<NPS_dist<<" cm"<<endl;
     cout<<"NPS angle: "<<NPS_angle*TMath::RadToDeg()<<" degrees"<<endl;
     cout<<"======================================"<<endl;
+    cout<<endl;
+    cout<<"NPS 2x2 clustering threshold "<<clusTrsH<<" GeV"<<endl;
     cout<<endl;
     cout<<"========== NPS maske blocks =========="<<endl;
     for(int i = 0; i < 1080; i++) if(caloMaskBlock[i] == 1) cout<<i<<" ";
@@ -254,7 +243,7 @@ void prodTree(int run_number, int iseg)
     TTree *t_prod = new TTree("t_prod", "t_prod");
 
     // Variables for NPS information in the tree
-    Int_t nclust;
+    Int_t nclust, nclust_acc1, nclust_coin, nclust_acc2;
     vector<double> clusE;
     vector<int> clusSize;
     vector<double> clusX;
@@ -267,8 +256,8 @@ void prodTree(int run_number, int iseg)
     vector<double> trkPy;
     vector<double> trkPz;
     vector<double> trkE;
-    Double_t M;
-    Double_t Mx2;
+    vector<double> M;
+    vector<double> Mx2;
 
     //Event Level variables
     t_prod->Branch("g.runnum", &runNb_T);
@@ -286,20 +275,32 @@ void prodTree(int run_number, int iseg)
     t_prod->Branch("H.hod.beta", &H_hod_beta);
     t_prod->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
     t_prod->Branch("H.cer.npeSum", &H_cer_npeSum);
-    // // NPS waveform fitting results
-    // t_prod->Branch("evt", &evtNb_wf); // Global event number of wf tree
-    // t_prod->Branch("chi2", &chi2); // Number of pulses found by TSpectrum in this block
-    // t_prod->Branch("wfnpulse", &wfnpulse); // Number of pulses found by TSpectrum in this block 
-    // t_prod->Branch("wfampl", &wfampl); // Waveform amplitude of each fitted pulse (mV)
-    // t_prod->Branch("wftime", &wftime); // Pulse time of each fitted pulse per block (ns)
+    //added
+    t_prod->Branch("H.react.ok", &H_react_ok);
+    t_prod->Branch("H.gtr.ok", &H_gtr_ok);
+    t_prod->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_prod->Branch("H.cal.etotnorm", &H_cal_etotnorm);
+    t_prod->Branch("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
+    t_prod->Branch("H.1MHz.scaler", &H_1MHz_scaler);
+    t_prod->Branch("H.BCM4A.scaler", &H_BCM4A_scaler);
+    t_prod->Branch("H.BCM4A.scalerCharge", &H_BCM4A_scalerCharge);
+    t_prod->Branch("H.BCM4A.scalerCurrent", &H_BCM4A_scalerCurrent);
+    t_prod->Branch("H.BCM4A.scalerChargeCut", &H_BCM4A_scalerChargeCut);
+    t_prod->Branch("H.BCM4A_Hel.scalerCharge", &H_BCM4A_Hel_scalerCharge);
+    t_prod->Branch("H.BCM4A_Hel.scalerCurrent", &H_BCM4A_Hel_scalerCurrent);
+    t_prod->Branch("H.BCM4A_Hel.scaler", &H_BCM4A_Hel_scaler);
+    t_prod->Branch("T.helicity.hel", &T_helicity_hel);
     // NPS information
-    t_prod->Branch("NPS.prod.nclust", &nclust, "nclust/I");
+    t_prod->Branch("NPS.prod.nclust", &nclust, "nclust_of_all_timing_window/I");
+    t_prod->Branch("NPS.prod.nclustAcc1", &nclust_acc1, "nclust_accidental_negative_timing/I");
+    t_prod->Branch("NPS.prod.nclustCoin", &nclust_coin, "nclust_coin_time/I");
+    t_prod->Branch("NPS.prod.nclustAcc2", &nclust_acc2, "nclust_accidental_positive_timing/I");
     t_prod->Branch("NPS.prod.clusE", &clusE);
     t_prod->Branch("NPS.prod.clusSize", &clusSize);
     t_prod->Branch("NPS.prod.clusX", &clusX);
-    t_prod->Branch("NPS.prod.clusX.corr", &clusX_corr);
+    t_prod->Branch("NPS.prod.clusXcorr", &clusX_corr);
     t_prod->Branch("NPS.prod.clusY", &clusY);
-    t_prod->Branch("NPS.prod.clusY.corr", &clusY_corr);
+    t_prod->Branch("NPS.prod.clusYcorr", &clusY_corr);
     t_prod->Branch("NPS.prod.clusZ", &NPS_dist);
     t_prod->Branch("NPS.prod.clusT", &clusT);
     t_prod->Branch("NPS.prod.clusDepth", &clusDepth);
@@ -307,80 +308,8 @@ void prodTree(int run_number, int iseg)
     t_prod->Branch("NPS.prod.trk.py", &trkPy);
     t_prod->Branch("NPS.prod.trk.pz", &trkPz);
     t_prod->Branch("NPS.prod.trk.ene", &trkE);
-    t_prod->Branch("NPS.prod.M", &M, "M/D");
-    t_prod->Branch("NPS.prod.Mx2", &Mx2, "Mx2/D");
-
-    // Ontput Tree for accidental data #1___________________________________________________________
-    TTree *t_accdt1 = new TTree("t_accdt1", "t_accdt1");
-    //Event Level variables
-    t_accdt1->Branch("g.runnum", &runNb_T);
-    t_accdt1->Branch("g.evnum", &evtNb_T); // Global event number of T tree
-    // HMS information
-    t_accdt1->Branch("H.gtr.dp", &H_gtr_dp);
-    t_accdt1->Branch("H.gtr.ph", &H_gtr_ph);
-    t_accdt1->Branch("H.gtr.th", &H_gtr_th);
-    t_accdt1->Branch("H.gtr.px", &H_gtr_px);
-    t_accdt1->Branch("H.gtr.py", &H_gtr_py);
-    t_accdt1->Branch("H.gtr.pz", &H_gtr_pz);
-    t_accdt1->Branch("H.react.x", &H_react_x);
-    t_accdt1->Branch("H.react.y", &H_react_y);
-    t_accdt1->Branch("H.react.z", &H_react_z);
-    t_accdt1->Branch("H.hod.beta", &H_hod_beta);
-    t_accdt1->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
-    t_accdt1->Branch("H.cer.npeSum", &H_cer_npeSum);
-    // NPS information
-    t_accdt1->Branch("NPS.prod.nclust", &nclust, "nclust/I");
-    t_accdt1->Branch("NPS.prod.clusE", &clusE);
-    t_accdt1->Branch("NPS.prod.clusSize", &clusSize);
-    t_accdt1->Branch("NPS.prod.clusX", &clusX);
-    t_accdt1->Branch("NPS.prod.clusX.corr", &clusX_corr);
-    t_accdt1->Branch("NPS.prod.clusY", &clusY);
-    t_accdt1->Branch("NPS.prod.clusY.corr", &clusY_corr);
-    t_accdt1->Branch("NPS.prod.clusZ", &NPS_dist);
-    t_accdt1->Branch("NPS.prod.clusT", &clusT);
-    t_accdt1->Branch("NPS.prod.clusDepth", &clusDepth);
-    t_accdt1->Branch("NPS.prod.trk.px", &trkPx);
-    t_accdt1->Branch("NPS.prod.trk.py", &trkPy);
-    t_accdt1->Branch("NPS.prod.trk.pz", &trkPz);
-    t_accdt1->Branch("NPS.prod.trk.ene", &trkE);
-    t_accdt1->Branch("NPS.prod.M", &M);
-    t_accdt1->Branch("NPS.prod.Mx2", &Mx2);
-
-    // Ontput Tree for accidental data #2___________________________________________________________
-    TTree *t_accdt2 = new TTree("t_accdt2", "t_accdt2");
-    //Event Level variables
-    t_accdt2->Branch("g.runnum", &runNb_T);
-    t_accdt2->Branch("g.evnum", &evtNb_T); // Global event number of T tree
-    // HMS information
-    t_accdt2->Branch("H.gtr.dp", &H_gtr_dp);
-    t_accdt2->Branch("H.gtr.ph", &H_gtr_ph);
-    t_accdt2->Branch("H.gtr.th", &H_gtr_th);
-    t_accdt2->Branch("H.gtr.px", &H_gtr_px);
-    t_accdt2->Branch("H.gtr.py", &H_gtr_py);
-    t_accdt2->Branch("H.gtr.pz", &H_gtr_pz);
-    t_accdt2->Branch("H.react.x", &H_react_x);
-    t_accdt2->Branch("H.react.y", &H_react_y);
-    t_accdt2->Branch("H.react.z", &H_react_z);
-    t_accdt2->Branch("H.hod.beta", &H_hod_beta);
-    t_accdt2->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
-    t_accdt2->Branch("H.cer.npeSum", &H_cer_npeSum);
-    // NPS information
-    t_accdt2->Branch("NPS.prod.nclust", &nclust, "nclust/I");
-    t_accdt2->Branch("NPS.prod.clusE", &clusE);
-    t_accdt2->Branch("NPS.prod.clusSize", &clusSize);
-    t_accdt2->Branch("NPS.prod.clusX", &clusX);
-    t_accdt2->Branch("NPS.prod.clusX.corr", &clusX_corr);
-    t_accdt2->Branch("NPS.prod.clusY", &clusY);
-    t_accdt2->Branch("NPS.prod.clusY.corr", &clusY_corr);
-    t_accdt2->Branch("NPS.prod.clusZ", &NPS_dist);
-    t_accdt2->Branch("NPS.prod.clusT", &clusT);
-    t_accdt2->Branch("NPS.prod.clusDepth", &clusDepth);
-    t_accdt2->Branch("NPS.prod.trk.px", &trkPx);
-    t_accdt2->Branch("NPS.prod.trk.py", &trkPy);
-    t_accdt2->Branch("NPS.prod.trk.pz", &trkPz);
-    t_accdt2->Branch("NPS.prod.trk.ene", &trkE);
-    t_accdt2->Branch("NPS.prod.M", &M);
-    t_accdt2->Branch("NPS.prod.Mx2", &Mx2);
+    t_prod->Branch("NPS.prod.M", &M);
+    t_prod->Branch("NPS.prod.Mx2", &Mx2);
 
     // Ontput Tree for pi0 contamination___________________________________________________________
     TTree *t_pi0sub = new TTree("t_pi0sub", "t_pi0sub");
@@ -400,6 +329,21 @@ void prodTree(int run_number, int iseg)
     t_pi0sub->Branch("H.hod.beta", &H_hod_beta);
     t_pi0sub->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
     t_pi0sub->Branch("H.cer.npeSum", &H_cer_npeSum);
+    //added
+    t_pi0sub->Branch("H.react.ok", &H_react_ok);
+    t_pi0sub->Branch("H.gtr.ok", &H_gtr_ok);
+    t_pi0sub->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_pi0sub->Branch("H.cal.etotnorm", &H_cal_etotnorm);
+    t_pi0sub->Branch("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
+    t_pi0sub->Branch("H.1MHz.scaler", &H_1MHz_scaler);
+    t_pi0sub->Branch("H.BCM4A.scaler", &H_BCM4A_scaler);
+    t_pi0sub->Branch("H.BCM4A.scalerCharge", &H_BCM4A_scalerCharge);
+    t_pi0sub->Branch("H.BCM4A.scalerCurrent", &H_BCM4A_scalerCurrent);
+    t_pi0sub->Branch("H.BCM4A.scalerChargeCut", &H_BCM4A_scalerChargeCut);
+    t_pi0sub->Branch("H.BCM4A_Hel.scalerCharge", &H_BCM4A_Hel_scalerCharge);
+    t_pi0sub->Branch("H.BCM4A_Hel.scalerCurrent", &H_BCM4A_Hel_scalerCurrent);
+    t_pi0sub->Branch("H.BCM4A_Hel.scaler", &H_BCM4A_Hel_scaler);
+    t_pi0sub->Branch("T.helicity.hel", &T_helicity_hel);
     // photons from pi0 contamination
     Int_t N0, N1, N2;
     Double_t weight;
@@ -433,72 +377,81 @@ void prodTree(int run_number, int iseg)
     TH1F *h_etottracknorm = new TH1F("h_etottracknorm", "H.cal.etottracknorm", 1000, 0, 10);
     TH1F *h_npeSum = new TH1F("h_npeSum", "H.cer.npeSum", 1000, 0, 10);
     TH1F *h_beta = new TH1F("h_beta", "H.hod.beta;#beta;Counts", 1500, 0, 1.5);
-    TH1F *h_NpsTime = new TH1F("h_NpsTime", "NPS timing with offset correction (ampl. > 10 mV);Pulse time [ns];Number of events", 20000, -100, 100); // When using the waveform tree
+    TH1F *h_NpsTime = new TH1F("h_NpsTime", "NPS timing with offset correction (ampl. > 10 mV);Pulse time [ns];Number of events", 20000, -100, 100);
 
     TH1F *h_nclust = new TH1F("h_nclust", "Number of clusters;Number of clusters;Counts", 21, -0.5, 20.5);
 
     // Event loop
     Int_t nevt = nevt_T;
     // Int_t nevt = 10000; // for testing
-    Double_t tmean = 0.;
-    for(int it = 0; it < 3; it++){ // Loop over three different time windows
-        if(it == 0) tmean = 0.; // Production time window = 0+-3ns
-        else if(it == 1) tmean = -8.; // Accidental#1 time window = -8+-3ns
-        else if(it == 2) tmean = 8.; // Accidental#1 time window = 8+-3ns
+    Int_t idxTW[3]; // index that corresponds to the time window: idxTW[i]=0->(-11,-5), idxTW[i]=1->(-3,3), idxTW[i]=2->(5,11)
+    Double_t tmean_arr[3] = {-8., 0., 8.}; // time window array
+    for(Int_t ievt = 0; ievt < nevt; ievt++){ // Event loop
+        t_T->GetEntry(ievt);
+        t_wf->GetEntry(indexArray[ievt]); // indexArray[i] is the original-entry number for the i-th smallest evt
+        if(ievt%100000==0) cout << "Looking at entry = " << ievt << "  (" << 100.*ievt/nevt_T << "%)" << endl;
 
-        for(Int_t ievt = 0; ievt < nevt; ievt++){ // Event loop
-            t_T->GetEntry(ievt);
-            t_wf->GetEntry(indexArray[ievt]); // indexArray[i] is the original-entry number for the i-th smallest evt
-            if(ievt%100000==0) cout << "Looking at entry = " << ievt << "  (" << 100.*ievt/nevt_T << "%)" << endl;
+        bool flipTW = ievt % 2; // to invert the time-window sequence
+        if(!flipTW){ idxTW[0] = 0; idxTW[1] = 1; idxTW[2] = 2; } 
+        else{ idxTW[0] = 2; idxTW[1] = 1; idxTW[2] = 0; } // invert time window order when ievt is odd
 
-            // Initialize for production and accidental trees
-            nclust = 0;
-            clusE.clear();
-            clusSize.clear();
-            clusX.clear();
-            clusX_corr.clear();
-            clusY.clear();
-            clusY_corr.clear();
-            clusT.clear();
-            clusDepth.clear();
-            trkPx.clear();
-            trkPy.clear();
-            trkPz.clear();
-            trkE.clear();
-            M = -999;
-            Mx2 = -999;
-            // Initialize for pi0 contamination tree
-            N0 = 0;
-            N1 = 0;
-            N2 = 0;
-            weight = 1.;
-            phXc.clear();
-            phYc.clear();
-            phPx.clear();
-            phPy.clear();
-            phPz.clear();
-            phE.clear();
-            phMx2.clear();
+        // Initialize for production tree
+        nclust = 0; // for all pulse time window
+        nclust_acc1 = 0; // pulse time in (-11, -5)
+        nclust_coin = 0; // pulse time in (-3, 3)
+        nclust_acc2 = 0; // pulse time in (5, 11)
+        clusE.clear();
+        clusSize.clear();
+        clusX.clear();
+        clusX_corr.clear();
+        clusY.clear();
+        clusY_corr.clear();
+        clusT.clear();
+        clusDepth.clear();
+        trkPx.clear();
+        trkPy.clear();
+        trkPz.clear();
+        trkE.clear();
+        M.clear();
+        Mx2.clear();
+        // Initialize for pi0 contamination tree
+        N0 = 0;
+        N1 = 0;
+        N2 = 0;
+        weight = 1.;
+        phXc.clear();
+        phYc.clear();
+        phPx.clear();
+        phPy.clear();
+        phPz.clear();
+        phE.clear();
+        phMx2.clear();
 
-            if(abs(H_react_x) > 100 || abs(H_react_y) > 100 || abs(H_react_z) > 100){ 
-                // Skip photon reconstruction for strange vertex postion of 1e+38
-                // Fill the Tree then jump to next event without clustering
-                if(it == 0){t_prod->Fill(); continue;}
-                else if(it == 1){t_accdt1->Fill(); continue;}
-                else if(it == 2){t_accdt2->Fill(); continue;}
-            }
-            // Fill the histograms before selection
-            h_reactX->Fill(H_react_x);
-            h_reactY->Fill(H_react_y);
-            h_reactZ->Fill(H_react_z);
-            h_th->Fill(H_gtr_th);
-            hh_dp_ph->Fill(H_gtr_ph, H_gtr_dp);
-            h_etottracknorm->Fill(H_cal_etottracknorm);
-            h_npeSum->Fill(H_cer_npeSum);
-            h_beta->Fill(H_hod_beta);
-            
+        if(abs(H_react_x) > 100 || abs(H_react_y) > 100 || abs(H_react_z) > 100){ 
+            // Skip photon reconstruction for strange vertex postion of 1e+38
+            // Fill the Tree then jump to next event without clustering
+            t_prod->Fill();
+            continue;
+        }
 
-            // Using the waveform tree_____________________________________________
+        // Fill the histograms
+        h_reactX->Fill(H_react_x);
+        h_reactY->Fill(H_react_y);
+        h_reactZ->Fill(H_react_z);
+        h_th->Fill(H_gtr_th);
+        hh_dp_ph->Fill(H_gtr_ph, H_gtr_dp);
+        h_etottracknorm->Fill(H_cal_etottracknorm);
+        h_npeSum->Fill(H_cer_npeSum);
+        h_beta->Fill(H_hod_beta);
+        
+        // scattered electron four momenta
+        Double_t H_gtr_e = sqrt(H_gtr_px*H_gtr_px+H_gtr_py*H_gtr_py+H_gtr_pz*H_gtr_pz+0.000511*0.000511);
+        TLorentzVector kpvec(H_gtr_px, H_gtr_py, H_gtr_pz, H_gtr_e);
+
+        for(int it = 0; it < 3; it++){ // Loop over three different time windows -> clustering for 3 times
+            Double_t tmean = tmean_arr[idxTW[it]]; // central value of the time window, use idxTW[i] to select time window
+
+            // Add pulse energy and timing for clustering (using the waveform tree)__________________________
             Int_t flatIdx = 0; // accumulated number of pulses in previous blocks
             for (size_t iblk=0; iblk<wfnpulse->size(); iblk++){
                 Int_t nPulse = (*wfnpulse)[iblk];
@@ -509,20 +462,23 @@ void prodTree(int run_number, int iseg)
                     for (Int_t p = 0; p < nPulse; p++){ // Find the pulse closest to the mean time
                         if(abs((*wftime)[flatIdx + p]+timingOffset[iblk]-tmean) <= abs((*wftime)[pulseIdx]+timingOffset[iblk]-tmean)) pulseIdx = flatIdx + p; 
                     }
-                    if(it == 0 && (*wfampl)[pulseIdx] > 10) h_NpsTime->Fill((*wftime)[pulseIdx]+timingOffset[iblk]); // Fill the histogram with timing offset correction
+                    if(idxTW[it] == 1 && (*wfampl)[pulseIdx] > 10) h_NpsTime->Fill((*wftime)[pulseIdx]+timingOffset[iblk]); // Fill the histogram with timing offset correction
 
-                    if(abs((*wftime)[pulseIdx]+timingOffset[iblk]-tmean) < 3) block->AddPulse((*wfampl)[pulseIdx] * coefPi0[iblk], (*wftime)[pulseIdx]+timingOffset[iblk]-tmean); // Add energy and timing to the block
+                    if(abs((*wftime)[pulseIdx]+timingOffset[iblk]-tmean) < 3) block->AddPulse((*wfampl)[pulseIdx] * coefPi0[iblk], (*wftime)[pulseIdx]+timingOffset[iblk]); // Add energy and timing to the block
                 } // block selection
                 flatIdx += nPulse;
             } // loop over 1080 blocks
 
-            caloev->TriggerSim(clusTrsH);     // Energy threshold of every 2x2 blocks
-            caloev->DoClustering(-3, 3); // Time window cut (-3,3) [ns] for clustering
+            caloev->TriggerSim(clusTrsH); // Energy threshold of every 2x2 blocks
+            caloev->DoClustering(tmean-3, tmean+3); // Time window cut (tmean-3,tmean+3) [ns] for clustering
             ev->SetCaloEvent(caloev);
             ev->SetVertex(H_react_x, H_react_y, H_react_z);
 
-            nclust = caloev->GetNbClusters();
-            for(int iclus = 0; iclus < nclust; iclus++){
+            if(idxTW[it] == 0) nclust_acc1 = caloev->GetNbClusters(); // Accidental#1 time window = -8+-3ns
+            if(idxTW[it] == 1) nclust_coin = caloev->GetNbClusters(); // Production time window = 0+-3ns
+            if(idxTW[it] == 2) nclust_acc2 = caloev->GetNbClusters(); // Accidental#2 time window = 8+-3ns
+
+            for(int iclus = 0; iclus < caloev->GetNbClusters(); iclus++){
                 caloev->GetCluster(iclus)->Analyze(1);
 
                 clusE.push_back(caloev->GetCluster(iclus)->GetEnergy());
@@ -551,25 +507,23 @@ void prodTree(int run_number, int iseg)
                     else(cout<<"Warning: block energy <= 0 ("<<blockE<<" GeV)"<<endl);
                 }
                 clusT.push_back(sum_et/caloev->GetCluster(iclus)->GetEnergy());
-            }
+            } // loop of clusters
 
-            h_nclust->Fill(nclust);
-
-            Double_t H_gtr_e = sqrt(H_gtr_px*H_gtr_px+H_gtr_py*H_gtr_py+H_gtr_pz*H_gtr_pz+0.000511*0.000511);
-            TLorentzVector kpvec(H_gtr_px, H_gtr_py, H_gtr_pz, H_gtr_e);
             if(caloev->GetNbClusters() == 1){
                 TLorentzVector photon1 = ev->GetPhoton(0);
-                Mx2 = (beam + p0 - kpvec - photon1).Mag2();
+                Mx2.push_back((beam + p0 - kpvec - photon1).Mag2());
             } // clus==1
 
             else if(caloev->GetNbClusters() == 2){
                 TLorentzVector photon1 = ev->GetPhoton(0);
                 TLorentzVector photon2 = ev->GetPhoton(1);
-                M = (photon1 + photon2).M();
-                Mx2 = (beam + p0 - kpvec - photon1 - photon2).Mag2();
+                TLorentzVector pion_tlv = photon1 + photon2;
+
+                M.push_back(pion_tlv.M());
+                Mx2.push_back((beam + p0 - kpvec - pion_tlv).Mag2());
 
                 // pi0 subtraction__________________________________________________________________
-                if(it == 0){
+                if(idxTW[it] == 1){ // coin timing
                     // acceptance cut for photons
                     Int_t nCol_inMgnt = 0; // number of columns under the shadow of magnet
                     if(290 < NPS_dist && NPS_dist < 310) nCol_inMgnt = 5; // col0-4 when NPS@300cm
@@ -589,17 +543,16 @@ void prodTree(int run_number, int iseg)
                     Double_t Ycut_min = -2.16*(18-1);
                     Double_t Ycut_max = 2.16*(18-1);
 
-                    if(abs(M-0.1349766) < pi0_sigm // pi0 mass window cut, pi0_sigm is run dependent
+                    if(abs(pion_tlv.M()-0.1349766) < pi0_sigm // pi0 mass window cut, pi0_sigm is run dependent
                     && ene1 > 0.5 && ene2 > 0.5
                     && Xcut_min < x1 && x1 < Xcut_max && Ycut_min < y1 && y1 < Ycut_max
                     && Xcut_min < x2 && x2 < Xcut_max && Ycut_min < y2 && y2 < Ycut_max){
                         
-                        TLorentzVector pion_tlv = photon1 + photon2;
                         for(int idc = 0; idc < ndecay; idc++){
                             Double_t cosalpha = 2.*gRandom->Rndm()-1.; // uniform polor angle cos(alpha) between -1 and 1
                             Double_t phi2 = 2.*TMath::Pi()*gRandom->Rndm(); // uniform azimuthal angle between 0 and 2*pi
                             // Decay in pion rest frame
-                            Double_t e_photon = 0.5*M;
+                            Double_t e_photon = 0.5*pion_tlv.M();
                             Double_t px_photon = e_photon*TMath::Sin(TMath::ACos(cosalpha))*TMath::Cos(phi2);
                             Double_t py_photon = e_photon*TMath::Sin(TMath::ACos(cosalpha))*TMath::Sin(phi2);
                             Double_t pz_photon = e_photon*cosalpha;
@@ -661,26 +614,24 @@ void prodTree(int run_number, int iseg)
                         } // loop over ndecay
                         weight = 1./N2;
                         t_pi0sub->Fill();
-                    }
-                }
+                    } // pi0 mass window cut
+                } // if it==1
             } // clus==2
 
-            if(it == 0) t_prod->Fill();
-            else if(it == 1) t_accdt1->Fill();
-            else if(it == 2) t_accdt2->Fill();
-
-            // reinitialization for next event
+            // reinitialization for next time window
             caloev->Reset();
-        } // Event loop: production and accidental tree
-    }// Loop over different mean time(-8,0,8)ns
+        } // Loop over different time windows with mean time{-8,0,8}ns
+        nclust = nclust_acc1+nclust_coin+nclust_acc2;
+        h_nclust->Fill(nclust);
+        t_prod->Fill();
+
+    } // Event loop: production and accidental tree
 
     cout<<endl;
     cout<<"Number of event summary ===================="<<endl;
     cout<<"T tree: "<<nevt_T<<endl;
     cout<<"waveform tree: "<<nevt_wf<<endl;
     cout<<"production tree: "<<t_prod->GetEntries()<<endl;
-    cout<<"accidental#1 tree: "<<t_accdt1->GetEntries()<<endl;
-    cout<<"accidental#2 tree: "<<t_accdt2->GetEntries()<<endl;
     cout<<"pi0 contamination tree: "<<t_pi0sub->GetEntries()<<endl;
     cout<<"============================================"<<endl;
     cout<<endl;
@@ -691,8 +642,6 @@ void prodTree(int run_number, int iseg)
     // Save the output file__________________________________________________________
     outfile->cd();
     t_prod->Write();
-    t_accdt1->Write();
-    t_accdt2->Write();
     t_pi0sub->Write();
     
     h_reactX->Write();
@@ -704,6 +653,7 @@ void prodTree(int run_number, int iseg)
     h_th->Write();
     hh_dp_ph->Write();
     h_nclust->Write();
+    h_NpsTime->Write();
     
     outfile->Close();
 }
