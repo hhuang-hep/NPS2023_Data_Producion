@@ -18,7 +18,7 @@ The methods are based on the NPS software package (https://github.com/hhuang-hep
 3. Clustering method and algorithm
     - TCaloEvent::DoClustering(Double_t timemin, Double_t timemax, Float_t BlockThreshold)
     - Pulses with their timing in (timemin, timemax) and energy > BlockThreshold will be considered
-    - We are using pulse time in (-3, 3) and BlockThreshold = 0 (no threshold for individual pulse)
+    - We are using pulse time in (-11, -5), (-3, 3), (5, 11) and BlockThreshold = 0 (no threshold for individual pulse)
     - Clustering algorithm: cellular automaton (Nuclear Instruments and Methods in Physics Research A 362, 478-486, 1995)
 
 4. Photon reconstruction
@@ -28,48 +28,73 @@ The methods are based on the NPS software package (https://github.com/hhuang-hep
     - a_out, x_corr, and y_corr are set for output branches (see below)
 
 ## Output Trees
-4 trees are output for analysis. Details of their branches are listed below.
+2 trees are output for analysis. Details of their branches are listed below.
 Here is a brief discription:
-1. t_prod: production tree of coincident events (i.e., pulses with timing within (-3, 3))
-2. t_accdt1: production tree of accidental enents with negative pulse time within (-11, -5)
-3. t_accdt2: production tree of accidental enents with positive pulse time within (5, 11)
+1. t_prod: production tree of events with pulses timing within (-11, -5), (-3, 3), (5, 11). Detailed information about filling events:
 
-Structure of the production trees above are the same. Information of all NPS clusters are stored
+    In each event $ievt$\
+    (a) Reconstruct photons using one of the time windows\
+    (b) Put cluster & photon variables into vectors\
+    (c) Move to the next time window, repeat (a) and (b).\
+    The order of time windows are:
+    - [-11, -5]→[-3, 3]→[5, 11] when $ievt$ is EVEN;
+    - [5, 11]→[-3, 3]→[-11, -5] when $ievt$ is ODD;\
+    (more details in https://hallcweb.jlab.org/elogs/NPS-RG1a-Analysis/260123_054502/Update_on_production_tree_(Jan._16).pdf)
 
-4. t_pi0sub: Monte-Carlo tree of pi0 contamination for DVCS analysis. 
-    - 5000 random decays at pi0 rest fram when finding a pi0 candidate (M_pi0 +- 3 sigma) in 2 cluster events.
+    After finishing all time windows, fill this event into the tree.\
+    Information of all NPS clusters are stored. No cut applied.
+
+2. t_pi0sub: Monte-Carlo tree of pi0 contamination for DVCS analysis. 
+    - 5000 random decays at pi0 rest fram when finding a pi0 candidate (M_pi0 $\pm$ 3 sigma) in 2 cluster events.
     - Energy cut for MC photons: 500 MeV (readout threshold during the experiment)
     - Events with 1 photon in the NPS acceptance are stored.
 
-## Branches of production trees (t_prod, t_accdt1, t_accdt2)
+## Branches of production tree (t_prod)
 ### Branches from T tree
 | Branch name | Type | Discription |
 |:------|:------|:------|
 | g.runnum | double |
 | g.evnum | double |
-| H.gtr.dp | double | 
+| H.gtr.ok | double |
 | H.gtr.dp | double | 
 | H.gtr.ph | double | 
 | H.gtr.th | double | 
 | H.gtr.px | double | 
 | H.gtr.py | double | 
 | H.gtr.pz | double | 
+| H.react.ok | double |
 | H.react.x | double | 
 | H.react.y | double | 
 | H.react.z | double | 
 | H.hod.beta | double | 
+| H.cal.etotnorm | double |
 | H.cal.etottracknorm | double | 
 | H.cer.npeSum | double |
+| H.cal.etracknorm | double |
+| T.hms.hEDTM_tdcTimeRaw | double | 
+| T.helicity.hel | double | 
+| H.1MHz.scaler | double | 
+| H.BCM4A.scaler | double | 
+| H.BCM4A.scalerCharge | double | 
+| H.BCM4A.scalerCurrent | double | 
+| H.BCM4A.scalerChargeCut | double | 
+| H.BCM4A_Hel.scalerCharge | double | 
+| H.BCM4A_Hel.scalerCurrent | double | 
+| H.BCM4A_Hel.scaler | double | 
+
 ### NPS related branches (after waveform fit + energy calibrated)
 | Branch name | Type | Discription |
 |:------|:------|:------|
-| NPS.prod.nclust | int | Number of cluster in th event |
+| NPS.prod.nclust | int | Total number of cluster in the event |
+| NPS.prod.nclustAcc1 | int | Number of cluster in time window (-11, -5) |
+| NPS.prod.nclustCoin | int | Number of cluster in time window (-3, 3)|
+| NPS.prod.nclustAcc2 | int | Number of cluster in time window (5, 11)|
 | NPS.prod.clusE | `vector<double>` | Cluster energy |
 | NPS.prod.clusSize | `vector<int>` | Cluster size |
 | NPS.prod.clusX | `vector<double>` | Cluster X position |
-| NPS.prod.clusX.corr | `vector<double>` | Cluster X position after shower depth correction |
+| NPS.prod.clusXcorr | `vector<double>` | Cluster X position after shower depth correction |
 | NPS.prod.clusY | `vector<double>` | Cluster Y position |
-| NPS.prod.clusY.corr | `vector<double>` | Cluster Y position after shower depth correction |
+| NPS.prod.clusYcorr | `vector<double>` | Cluster Y position after shower depth correction |
 | NPS.prod.clusZ | `vector<double>` | Distance from NPS surface to target center |
 | NPS.prod.clusT | `vector<double>` | Cluster timing |
 | NPS.prod.clusDepth | `vector<double>` | Shower depth along the trajectories of photons |
@@ -91,19 +116,32 @@ Structure of the production trees above are the same. Information of all NPS clu
 |:------|:------|:------|
 | g.runnum | double |
 | g.evnum | double |
-| H.gtr.dp | double | 
+| H.gtr.ok | double |
 | H.gtr.dp | double | 
 | H.gtr.ph | double | 
 | H.gtr.th | double | 
 | H.gtr.px | double | 
 | H.gtr.py | double | 
 | H.gtr.pz | double | 
+| H.react.ok | double |
 | H.react.x | double | 
 | H.react.y | double | 
 | H.react.z | double | 
 | H.hod.beta | double | 
+| H.cal.etotnorm | double |
 | H.cal.etottracknorm | double | 
 | H.cer.npeSum | double |
+| H.cal.etracknorm | double |
+| T.hms.hEDTM_tdcTimeRaw | double | 
+| T.helicity.hel | double | 
+| H.1MHz.scaler | double | 
+| H.BCM4A.scaler | double | 
+| H.BCM4A.scalerCharge | double | 
+| H.BCM4A.scalerCurrent | double | 
+| H.BCM4A.scalerChargeCut | double | 
+| H.BCM4A_Hel.scalerCharge | double | 
+| H.BCM4A_Hel.scalerCurrent | double | 
+| H.BCM4A_Hel.scaler | double | 
 
 ### Pi0 comtamination from MC
 | Branch name | Type | Discription |
