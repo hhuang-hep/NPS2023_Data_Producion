@@ -390,6 +390,11 @@ void prodTree(int run_number, int iseg)
         t_T->GetEntry(ievt);
         t_wf->GetEntry(indexArray[ievt]); // indexArray[i] is the original-entry number for the i-th smallest evt
         if(ievt%100000==0) cout << "Looking at entry = " << ievt << "  (" << 100.*ievt/nevt_T << "%)" << endl;
+        
+        if(evtNb_wf != evtNb_T){
+            cerr<< "Error: global event number in T tree ("<<evtNb_T<<") and WF tree ("<<evtNb_wf<<") do not match!"<<endl;
+            return;
+        }
 
         bool flipTW = ievt % 2; // to invert the time-window sequence
         if(!flipTW){ idxTW[0] = 0; idxTW[1] = 1; idxTW[2] = 2; } 
