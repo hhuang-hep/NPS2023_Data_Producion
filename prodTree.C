@@ -1,11 +1,45 @@
-#include "/home/hhuang/workspace/group_h/analysis/MyHeader/Analysis.h"
+#include "TSystem.h"
+#include "TMatrix.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TF1.h"
+#include "TFile.h"
+#include "TCutG.h"
+#include "TChain.h"
+#include "TCanvas.h"
+#include "TGaxis.h"
+#include "TGraph.h"
+#include "TLorentzVector.h"
+#include "TNtuple.h"
+#include "TLegend.h"
+#include "TLine.h"
+#include "TRandom3.h"
+#include "TStyle.h"
+#include <iostream>
+#include <sstream>
+// #include "TDVCSGlobal.h"
+#include "TTreeIndex.h"
+#include "TChainIndex.h"
+#include "TCaloEvent.h"
+#include "TCaloGeometry.h"
+#include "TCaloBase.h"
+#include "TDVCSEvent.h"
 #include "/group/nps/hhuang/software/NPS_SOFT/TDVCSDB.h"
 
+using namespace std;
+
 Int_t ndecay = 5000; // number of decays for pi0 contamination simulation
+
+// Functions to convert the numbering scheme of NPS
+Int_t bnConv_OldToNew(int ibn_old);
+Int_t bnConv_NewToOld(int ibn_new);
 
 void prodTree(int run_number, int iseg)
 {   
     TH1::SetDefaultSumw2();
+
+    Double_t m_p = 0.938272013; // proton mass [GeV]
+    Double_t m_pi0 = 0.1349766; // pi0 mass [GeV]
 
     // Kinematics dependent variables that are not in DB________________________________________
     Double_t clusTrsH = 0.2; // GeV
@@ -661,4 +695,27 @@ void prodTree(int run_number, int iseg)
     h_NpsTime->Write();
     
     outfile->Close();
+}
+
+// Functions to convert the numbering scheme of NPS
+Int_t bnConv_OldToNew(int ibn_old) // Convert the PMT number to the current version
+{
+  const Int_t ncol = 30; // number of columns
+  const Int_t nrow = 36; // number of rows
+  Int_t irow = ibn_old % nrow;
+  Int_t icol = 29 - ((ibn_old - irow) / nrow);
+  Int_t ibn_new = ncol * irow + icol;
+
+  return ibn_new;
+}
+
+Int_t bnConv_NewToOld(int ibn_new) // Convert the PMT number to the simulation version
+{
+  const Int_t ncol = 30; // number of columns
+  const Int_t nrow = 36; // number of rows
+  Int_t icol = 29 - (ibn_new % ncol);
+  Int_t irow = (ibn_new - ibn_new % ncol) / ncol;
+  Int_t ibn_old = nrow * icol + irow;
+
+  return ibn_old;
 }
