@@ -652,7 +652,7 @@ void prodTree(int run_number, int iseg)
                     Double_t Ycut_min = -2.16*(18-1);
                     Double_t Ycut_max = 2.16*(18-1);
 
-                    if(abs(pion_tlv.M()-0.1349766) < pi0_sigm // pi0 mass window cut, pi0_sigm is run dependent
+                    if(abs(pion_tlv.M()-0.1349766) < 3*pi0_sigm // pi0 mass window cut
                     && ene1 > 0.5 && ene2 > 0.5
                     && Xcut_min < x1 && x1 < Xcut_max && Ycut_min < y1 && y1 < Ycut_max
                     && Xcut_min < x2 && x2 < Xcut_max && Ycut_min < y2 && y2 < Ycut_max){
