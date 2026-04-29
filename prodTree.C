@@ -46,7 +46,7 @@ void prodTree(int run_number, int iseg)
     Double_t pi0_sigm = 0.0046; // GeV, for pi0 mass window cut of pi0 contamination subtraction
     
     // Input rootfiles__________________________________________________________
-    // TString dataDir = "/cache/hallc/c-nps/analysis/pass2/WF";
+    // TString dataDir = "/cache/hallc/c-nps/analysis/pass2/WF"; // for test
     TString dataDir = ".";
     TString filename = Form("nps_production_%d_%d_wf.root", run_number, iseg);
 
@@ -78,23 +78,34 @@ void prodTree(int run_number, int iseg)
     
     Double_t runNb_T;
     Double_t evtNb_T;
+
+    Double_t H_react_ok;
+    Double_t H_react_x;
+    Double_t H_react_y;
+    Double_t H_react_z;
+
+    Double_t H_gtr_ok;
     Double_t H_gtr_dp;
     Double_t H_gtr_ph;
     Double_t H_gtr_th;
     Double_t H_gtr_px;
     Double_t H_gtr_py;
     Double_t H_gtr_pz;
-    Double_t H_react_x;
-    Double_t H_react_y;
-    Double_t H_react_z;
+
+    Double_t H_dc_ntrack;
+
     Double_t H_hod_beta;
-    Double_t H_cal_etottracknorm;
+    Double_t H_hod_goodscinhit;
+    Double_t H_hod_goodstarttime;
+    Double_t H_hod_betanotrack;
+
     Double_t H_cer_npeSum;
-    // added
-    Double_t H_react_ok;
-    Double_t H_gtr_ok;
-    Double_t H_cal_etracknorm;
+
     Double_t H_cal_etotnorm;
+    Double_t H_cal_etracknorm;
+    Double_t H_cal_etottracknorm;
+    Double_t H_cal_eprtracknorm;
+
     Double_t T_hms_hEDTM_tdcTimeRaw;
     Double_t H_1MHz_scaler;
     Double_t H_BCM4A_scaler;
@@ -108,25 +119,37 @@ void prodTree(int run_number, int iseg)
 
     // Disabla all and turn on the branches we need
     t_T->SetBranchStatus("*", false);
+
     t_T->SetBranchStatus("g.runnum", true);
     t_T->SetBranchStatus("g.evnum", true);
-    t_T->SetBranchStatus("H.gtr.dp", true);
-    t_T->SetBranchStatus("H.gtr.ph", true);
-    t_T->SetBranchStatus("H.gtr.th", true);
-    t_T->SetBranchStatus("H.gtr.px", true);
-    t_T->SetBranchStatus("H.gtr.py", true);
-    t_T->SetBranchStatus("H.gtr.pz", true);
+
+    t_T->SetBranchStatus("H.react.ok", true);
     t_T->SetBranchStatus("H.react.x", true);
     t_T->SetBranchStatus("H.react.y", true);
     t_T->SetBranchStatus("H.react.z", true);
-    t_T->SetBranchStatus("H.hod.beta", true);
-    t_T->SetBranchStatus("H.cal.etottracknorm", true);
-    t_T->SetBranchStatus("H.cer.npeSum", true);
-    //added
-    t_T->SetBranchStatus("H.react.ok", true);
+
     t_T->SetBranchStatus("H.gtr.ok", true);
+    t_T->SetBranchStatus("H.gtr.px", true);
+    t_T->SetBranchStatus("H.gtr.py", true);
+    t_T->SetBranchStatus("H.gtr.pz", true);
+    t_T->SetBranchStatus("H.gtr.dp", true);
+    t_T->SetBranchStatus("H.gtr.ph", true);
+    t_T->SetBranchStatus("H.gtr.th", true);
+
+    t_T->SetBranchStatus("H.dc.ntrack", true);
+
+    t_T->SetBranchStatus("H.hod.beta", true);
+    t_T->SetBranchStatus("H.hod.goodscinhit", true);
+    t_T->SetBranchStatus("H.hod.goodstarttime", true);
+    t_T->SetBranchStatus("H.hod.betanotrack", true);
+
+    t_T->SetBranchStatus("H.cer.npeSum", true);
+
     t_T->SetBranchStatus("H.cal.etracknorm", true);
     t_T->SetBranchStatus("H.cal.etotnorm", true);
+    t_T->SetBranchStatus("H.cal.etottracknorm", true);
+    t_T->SetBranchStatus("H.cal.eprtracknorm", true);
+    
     t_T->SetBranchStatus("T.hms.hEDTM_tdcTimeRaw", true);
     t_T->SetBranchStatus("H.1MHz.scaler", true);
     t_T->SetBranchStatus("H.BCM4A.scaler", true);
@@ -142,23 +165,33 @@ void prodTree(int run_number, int iseg)
     t_T->SetBranchAddress("g.runnum", &runNb_T);
     t_T->SetBranchAddress("g.evnum", &evtNb_T); // Global event number of T tree
     // HMS information
-    t_T->SetBranchAddress("H.gtr.dp", &H_gtr_dp);
-    t_T->SetBranchAddress("H.gtr.ph", &H_gtr_ph);
-    t_T->SetBranchAddress("H.gtr.th", &H_gtr_th);
-    t_T->SetBranchAddress("H.gtr.px", &H_gtr_px);
-    t_T->SetBranchAddress("H.gtr.py", &H_gtr_py);
-    t_T->SetBranchAddress("H.gtr.pz", &H_gtr_pz);
+    t_T->SetBranchAddress("H.react.ok", &H_react_ok);
     t_T->SetBranchAddress("H.react.x", &H_react_x);
     t_T->SetBranchAddress("H.react.y", &H_react_y);
     t_T->SetBranchAddress("H.react.z", &H_react_z);
-    t_T->SetBranchAddress("H.hod.beta", &H_hod_beta);
-    t_T->SetBranchAddress("H.cal.etottracknorm", &H_cal_etottracknorm);
-    t_T->SetBranchAddress("H.cer.npeSum", &H_cer_npeSum);
-    //added
-    t_T->SetBranchAddress("H.react.ok", &H_react_ok);
+
     t_T->SetBranchAddress("H.gtr.ok", &H_gtr_ok);
+    t_T->SetBranchAddress("H.gtr.px", &H_gtr_px);
+    t_T->SetBranchAddress("H.gtr.py", &H_gtr_py);
+    t_T->SetBranchAddress("H.gtr.pz", &H_gtr_pz);
+    t_T->SetBranchAddress("H.gtr.dp", &H_gtr_dp);
+    t_T->SetBranchAddress("H.gtr.ph", &H_gtr_ph);
+    t_T->SetBranchAddress("H.gtr.th", &H_gtr_th);
+
+    t_T->SetBranchAddress("H.dc.ntrack", &H_dc_ntrack);
+    
+    t_T->SetBranchAddress("H.hod.goodscinhit", &H_hod_goodscinhit);
+    t_T->SetBranchAddress("H.hod.goodstarttime", &H_hod_goodstarttime);
+    t_T->SetBranchAddress("H.hod.betanotrack", &H_hod_betanotrack);
+    t_T->SetBranchAddress("H.hod.beta", &H_hod_beta);
+
+    t_T->SetBranchAddress("H.cer.npeSum", &H_cer_npeSum);
+    
     t_T->SetBranchAddress("H.cal.etracknorm", &H_cal_etracknorm);
     t_T->SetBranchAddress("H.cal.etotnorm", &H_cal_etotnorm);
+    t_T->SetBranchAddress("H.cal.etottracknorm", &H_cal_etottracknorm);
+    t_T->SetBranchAddress("H.cal.eprtracknorm", &H_cal_eprtracknorm);
+
     t_T->SetBranchAddress("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
     t_T->SetBranchAddress("H.1MHz.scaler", &H_1MHz_scaler);
     t_T->SetBranchAddress("H.BCM4A.scaler", &H_BCM4A_scaler);
@@ -236,6 +269,20 @@ void prodTree(int run_number, int iseg)
 
     delete db;
 
+    // Get the calibration coefficients from txt files
+    // TString calibDir = "/group/nps/hhuang/analysis/DVCS_NPS2023/DVCS_analysis/pi0Calib_wf/Result/Test_results/x36_5_3_LH2_wf_cycle0_cycle1_calibE_optimized_w0_a_final";
+    // ifstream infile_coef;
+    // infile_coef.open(Form("%s/coef_pi0Calib_%d.txt", calibDir.Data(), run_number));
+    // if (!infile_coef.is_open()){
+    //     cerr << "Error: cannot open calibration coefficient file.\n";
+    //     return;
+    // }
+
+    // for (int i = 0; i < 1080; i++){
+    //     infile_coef >> coefPi0[i];
+    // }
+    // infile_coef.close();
+
     cout<<"Start clustering for Run "<<run_number<<", segment "<<iseg<<endl;
     cout<<"========== Run information =========="<<endl;
     cout<<"Beam energy: "<<Beam_energy<<" GeV"<<endl;
@@ -296,25 +343,37 @@ void prodTree(int run_number, int iseg)
     //Event Level variables
     t_prod->Branch("g.runnum", &runNb_T);
     t_prod->Branch("g.evnum", &evtNb_T); // Global event number of T tree
-    // HMS information
-    t_prod->Branch("H.gtr.dp", &H_gtr_dp);
-    t_prod->Branch("H.gtr.ph", &H_gtr_ph);
-    t_prod->Branch("H.gtr.th", &H_gtr_th);
-    t_prod->Branch("H.gtr.px", &H_gtr_px);
-    t_prod->Branch("H.gtr.py", &H_gtr_py);
-    t_prod->Branch("H.gtr.pz", &H_gtr_pz);
+    // vertex information
+    t_prod->Branch("H.react.ok", &H_react_ok);
     t_prod->Branch("H.react.x", &H_react_x);
     t_prod->Branch("H.react.y", &H_react_y);
     t_prod->Branch("H.react.z", &H_react_z);
-    t_prod->Branch("H.hod.beta", &H_hod_beta);
-    t_prod->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
-    t_prod->Branch("H.cer.npeSum", &H_cer_npeSum);
-    //added
-    t_prod->Branch("H.react.ok", &H_react_ok);
+    // HMS information
     t_prod->Branch("H.gtr.ok", &H_gtr_ok);
-    t_prod->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_prod->Branch("H.gtr.px", &H_gtr_px);
+    t_prod->Branch("H.gtr.py", &H_gtr_py);
+    t_prod->Branch("H.gtr.pz", &H_gtr_pz);
+    t_prod->Branch("H.gtr.dp", &H_gtr_dp);
+    t_prod->Branch("H.gtr.ph", &H_gtr_ph);
+    t_prod->Branch("H.gtr.th", &H_gtr_th);
+
+    t_prod->Branch("H.dc.ntrack", &H_dc_ntrack);
+    
+    t_prod->Branch("H.hod.beta", &H_hod_beta);
+    t_prod->Branch("H.hod.goodscinhit", &H_hod_goodscinhit);
+    t_prod->Branch("H.hod.goodstarttime", &H_hod_goodstarttime);
+    t_prod->Branch("H.hod.betanotrack", &H_hod_betanotrack);
+
+    t_prod->Branch("H.cer.npeSum", &H_cer_npeSum);
+
     t_prod->Branch("H.cal.etotnorm", &H_cal_etotnorm);
+    t_prod->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_prod->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
+    t_prod->Branch("H.cal.eprtracknorm", &H_cal_eprtracknorm);
+    
+    t_prod->Branch("T.helicity.hel", &T_helicity_hel);
     t_prod->Branch("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
+
     t_prod->Branch("H.1MHz.scaler", &H_1MHz_scaler);
     t_prod->Branch("H.BCM4A.scaler", &H_BCM4A_scaler);
     t_prod->Branch("H.BCM4A.scalerCharge", &H_BCM4A_scalerCharge);
@@ -323,7 +382,6 @@ void prodTree(int run_number, int iseg)
     t_prod->Branch("H.BCM4A_Hel.scalerCharge", &H_BCM4A_Hel_scalerCharge);
     t_prod->Branch("H.BCM4A_Hel.scalerCurrent", &H_BCM4A_Hel_scalerCurrent);
     t_prod->Branch("H.BCM4A_Hel.scaler", &H_BCM4A_Hel_scaler);
-    t_prod->Branch("T.helicity.hel", &T_helicity_hel);
     // NPS information
     t_prod->Branch("NPS.prod.nclust", &nclust, "nclust_of_all_timing_window/I");
     t_prod->Branch("NPS.prod.nclustAcc1", &nclust_acc1, "nclust_accidental_negative_timing/I");
@@ -350,26 +408,39 @@ void prodTree(int run_number, int iseg)
     //Event Level variables
     t_pi0sub->Branch("g.runnum", &runNb_T);
     t_pi0sub->Branch("g.evnum", &evtNb_T); // Global event number of T tree
-    // HMS information
-    t_pi0sub->Branch("H.gtr.dp", &H_gtr_dp);
-    t_pi0sub->Branch("H.gtr.ph", &H_gtr_ph);
-    t_pi0sub->Branch("H.gtr.th", &H_gtr_th);
-    t_pi0sub->Branch("H.gtr.px", &H_gtr_px);
-    t_pi0sub->Branch("H.gtr.py", &H_gtr_py);
-    t_pi0sub->Branch("H.gtr.pz", &H_gtr_pz);
+    // vertex information
+    t_pi0sub->Branch("H.react.ok", &H_react_ok);
     t_pi0sub->Branch("H.react.x", &H_react_x);
     t_pi0sub->Branch("H.react.y", &H_react_y);
     t_pi0sub->Branch("H.react.z", &H_react_z);
-    t_pi0sub->Branch("H.hod.beta", &H_hod_beta);
-    t_pi0sub->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
-    t_pi0sub->Branch("H.cer.npeSum", &H_cer_npeSum);
-    //added
-    t_pi0sub->Branch("H.react.ok", &H_react_ok);
+    // HMS information
     t_pi0sub->Branch("H.gtr.ok", &H_gtr_ok);
-    t_pi0sub->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_pi0sub->Branch("H.gtr.px", &H_gtr_px);
+    t_pi0sub->Branch("H.gtr.py", &H_gtr_py);
+    t_pi0sub->Branch("H.gtr.pz", &H_gtr_pz);
+    t_pi0sub->Branch("H.gtr.dp", &H_gtr_dp);
+    t_pi0sub->Branch("H.gtr.ph", &H_gtr_ph);
+    t_pi0sub->Branch("H.gtr.th", &H_gtr_th);
+    
+    t_pi0sub->Branch("H.dc.ntrack", &H_dc_ntrack);
+
+    t_pi0sub->Branch("H.hod.beta", &H_hod_beta);
+    t_pi0sub->Branch("H.hod.goodscinhit", &H_hod_goodscinhit);
+    t_pi0sub->Branch("H.hod.goodstarttime", &H_hod_goodstarttime);
+    t_pi0sub->Branch("H.hod.betanotrack", &H_hod_betanotrack);
+
+    t_pi0sub->Branch("H.cer.npeSum", &H_cer_npeSum);
+
     t_pi0sub->Branch("H.cal.etotnorm", &H_cal_etotnorm);
+    t_pi0sub->Branch("H.cal.etracknorm", &H_cal_etracknorm);
+    t_pi0sub->Branch("H.cal.etottracknorm", &H_cal_etottracknorm);
+    t_pi0sub->Branch("H.cal.eprtracknorm", &H_cal_eprtracknorm);
+    
+    t_pi0sub->Branch("T.helicity.hel", &T_helicity_hel);
     t_pi0sub->Branch("T.hms.hEDTM_tdcTimeRaw", &T_hms_hEDTM_tdcTimeRaw);
+
     t_pi0sub->Branch("H.1MHz.scaler", &H_1MHz_scaler);
+    
     t_pi0sub->Branch("H.BCM4A.scaler", &H_BCM4A_scaler);
     t_pi0sub->Branch("H.BCM4A.scalerCharge", &H_BCM4A_scalerCharge);
     t_pi0sub->Branch("H.BCM4A.scalerCurrent", &H_BCM4A_scalerCurrent);
@@ -377,7 +448,6 @@ void prodTree(int run_number, int iseg)
     t_pi0sub->Branch("H.BCM4A_Hel.scalerCharge", &H_BCM4A_Hel_scalerCharge);
     t_pi0sub->Branch("H.BCM4A_Hel.scalerCurrent", &H_BCM4A_Hel_scalerCurrent);
     t_pi0sub->Branch("H.BCM4A_Hel.scaler", &H_BCM4A_Hel_scaler);
-    t_pi0sub->Branch("T.helicity.hel", &T_helicity_hel);
     // photons from pi0 contamination
     Int_t N0, N1, N2;
     Double_t weight;
