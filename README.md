@@ -4,7 +4,7 @@ This is the script for clustering, photon reconstruction, and analysis tree outp
 The methods are based on the NPS software package (https://github.com/hhuang-hep/NPS_SOFT.git), which is also used for photon reconstruction in simulation.
 
 ## How to run the script
-Execute with: root -b -q 'prodTree.C(run_number, segment_number)' \\
+Execute with: root -b -q 'prodTree.C(run_number, segment_number)'\
 NOTE: the directory for the input WF file and the output folder can be modified as needed.
 
 ## Clustering and photon reconstruction
